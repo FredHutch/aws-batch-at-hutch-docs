@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Using AWS Batch at Fred Hutch</title>
+  <meta name="description" content="">
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="http://localhost:3000/">
+  <link rel="alternate" type="application/rss+xml" title="Using AWS Batch at Fred Hutch" href="/feed.xml">
+  
+  
+</head>
+
+
+  <body>
+
+    <header class="site-header" role="banner">
+
+  <div class="wrapper">
+    
+    
+    <a class="site-title" href="/">Using AWS Batch at Fred Hutch</a>
+  
+    
+      <nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+              <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+              <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger">
+          
+            
+            
+            <a class="page-link" href="/about/">About</a>
+            
+          
+            
+            
+          
+            
+            
+          
+            
+            
+          
+            
+            
+          
+            
+            
+          
+        </div>
+      </nav>
+    
+  </div>
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <h1 class="no_toc">DRAFT</h1>
+
+<p>This documentation is still being written. Many sections are empty.</p>
+
+<h1 class="no_toc">Table of Contents</h1>
+
+<ul id="markdown-toc">
+  <li><a href="#what-is-aws-batch" id="markdown-toc-what-is-aws-batch">What is AWS Batch?</a>    <ul>
+      <li><a href="#how-do-i-use-aws-batch" id="markdown-toc-how-do-i-use-aws-batch">How do I use AWS Batch?</a></li>
+    </ul>
+  </li>
+  <li><a href="#request-access" id="markdown-toc-request-access">Request access</a>    <ul>
+      <li><a href="#get-aws-credentials" id="markdown-toc-get-aws-credentials">Get AWS Credentials</a></li>
+    </ul>
+  </li>
+  <li><a href="#create-a-docker-image" id="markdown-toc-create-a-docker-image">Create a Docker image</a>    <ul>
+      <li><a href="#do-you-need-to-create-your-own-image" id="markdown-toc-do-you-need-to-create-your-own-image">Do you need to create your own image?</a></li>
+      <li><a href="#getting-started" id="markdown-toc-getting-started">Getting Started</a></li>
+      <li><a href="#docker-installation-instructions" id="markdown-toc-docker-installation-instructions">Docker Installation Instructions</a></li>
+      <li><a href="#deploy-docker-image" id="markdown-toc-deploy-docker-image">Deploy Docker Image</a>        <ul>
+          <li><a href="#create-github-account" id="markdown-toc-create-github-account">Create GitHub Account</a></li>
+          <li><a href="#create-a-docker-hub-account" id="markdown-toc-create-a-docker-hub-account">Create a Docker Hub Account</a></li>
+          <li><a href="#push-your-dockerfile-to-a-github-repository" id="markdown-toc-push-your-dockerfile-to-a-github-repository">Push your Dockerfile to a GitHub repository</a></li>
+          <li><a href="#create-an-automated-build-in-docker-hub" id="markdown-toc-create-an-automated-build-in-docker-hub">Create an Automated Build in Docker Hub</a></li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li><a href="#create-a-job-definition" id="markdown-toc-create-a-job-definition">Create a Job Definition</a></li>
+  <li><a href="#using-secrets-in-jobs" id="markdown-toc-using-secrets-in-jobs">Using secrets in jobs</a></li>
+  <li><a href="#using-scratch-space" id="markdown-toc-using-scratch-space">Using scratch space</a></li>
+  <li><a href="#using-s3-in-jobs" id="markdown-toc-using-s3-in-jobs">Using S3 in jobs</a></li>
+  <li><a href="#submit-your-job" id="markdown-toc-submit-your-job">Submit your job</a></li>
+  <li><a href="#monitor-job-progress" id="markdown-toc-monitor-job-progress">Monitor job progress</a></li>
+  <li><a href="#examples" id="markdown-toc-examples">Examples</a>    <ul>
+      <li><a href="#using-fetch-and-run" id="markdown-toc-using-fetch-and-run">Using fetch-and-run</a></li>
+      <li><a href="#using-a-script-baked-in-to-a-docker-image" id="markdown-toc-using-a-script-baked-in-to-a-docker-image">Using a script baked-in to a Docker image</a></li>
+    </ul>
+  </li>
+  <li><a href="#references" id="markdown-toc-references">References</a></li>
+  <li><a href="#future-plans" id="markdown-toc-future-plans">Future plans</a></li>
+  <li><a href="#questions-or-comments" id="markdown-toc-questions-or-comments">Questions or Comments</a></li>
+</ul>
+
+<h1 id="what-is-aws-batch">What is AWS Batch?</h1>
+
+<p>From the <a href="https://aws.amazon.com/batch/">website</a>:</p>
+
+<blockquote>
+  <p>AWS Batch enables developers, scientists, and engineers to easily and efficiently run hundreds of thousands of batch computing jobs on AWS. AWS Batch dynamically provisions the optimal quantity and type of compute resources (e.g., CPU or memory optimized instances) based on the volume and specific resource requirements of the batch jobs submitted. With AWS Batch, there is no need to install and manage batch computing software or server clusters that you use to run your jobs, allowing you to focus on analyzing results and solving problems. AWS Batch plans, schedules, and executes your batch computing workloads across the full range of AWS compute services and features, such as Amazon EC2 and Spot Instances.</p>
+</blockquote>
+
+<p>AWS Batch uses AWS <a href="https://aws.amazon.com/ecs/">EC2 Container Service</a> (ECS), meaning your job must be configured as a <a href="https://www.docker.com/">Docker</a>
+container.</p>
+
+<h2 id="how-do-i-use-aws-batch">How do I use AWS Batch?</h2>
+
+<p>SciComp provides access to AWS Batch in two ways:</p>
+
+<ul>
+  <li>Via the <a href="https://aws.amazon.com/cli/">AWS Command Line Interface (CLI)</a></li>
+  <li>Via programmatic interfaces such as Python’s <a href="https://boto3.readthedocs.io/en/latest/reference/core/boto3.html">boto3</a>. The
+earlier version of this library (<code class="highlighter-rouge">boto</code>) is deprecated and should not be used.</li>
+</ul>
+
+<p>Console (web/GUI) access to AWS batch is not available to end users at the Center.</p>
+
+<h1 id="request-access">Request access</h1>
+
+<h2 id="get-aws-credentials">Get AWS Credentials</h2>
+
+<p>You will need AWS credentials in order to
+use AWS Batch. You can get the credentials
+<a href="https://teams.fhcrc.org/sites/citwiki/SciComp/Pages/Getting%20AWS%20Credentials.aspx">here</a>.</p>
+
+<p>Initially, these credentials only allow you
+to access your PI’s S3 bucket. To use the
+credentials with AWS Batch, you must request
+access to batch.</p>
+
+<p>Request access by emailing <strong>scicomp@fredhutch.org</strong> with the subject
+line <strong>Request Access to AWS Batch</strong>.</p>
+
+<p>In your email, <strong>include</strong> the name of your PI.</p>
+
+<p>SciComp will contact you when your access has been granted.</p>
+
+<p>Note that you will not be able to create
+compute environments or job queues. If you need a custom compute environment, please contact SciComp.</p>
+
+<div style="display: none;">
+scicomp people:
+
+The way to onboard a new user is to do the following:
+
+```
+. /app/local/aws-batch-wrapper/env/bin/activate # start virtual env
+/app/local/aws-batch-wrapper/onboarding.py # show help message
+# For a user with HutchNet ID jblow and PI name peters-u, run:
+/app/local/aws-batch-wrapper/onboarding.py jblow peters-u
+```
+
+This requires some special permissions, you probably need to
+authenticate your command-line session with MFA.
+
+</div>
+
+<h1 id="create-a-docker-image">Create a Docker image</h1>
+
+<h2 id="do-you-need-to-create-your-own-image">Do you need to create your own image?</h2>
+
+<p>It depends on what you want to do. If you are using software that is
+readily available, there is probably already a Docker image containing
+that software. Look around on <a href="https://hub.docker.com/">Docker Hub</a> to see
+if there’s already a Docker image available.</p>
+
+<p>The SciComp group is also developing Docker images that contain much
+of the software you are used to finding in <code class="highlighter-rouge">/app</code> on the <code class="highlighter-rouge">rhino</code>
+machines and <code class="highlighter-rouge">gizmo</code>/<code class="highlighter-rouge">beagle</code> clusters.</p>
+
+<p>If you’ve found an existing Docker image that meets your needs, you don’t
+need to read the rest of this section.</p>
+
+<h2 id="getting-started">Getting Started</h2>
+
+<p>It’s recommended (but not required) that you install
+<a href="https://www.docker.com/">Docker</a> on your workstation (laptop or desktop)
+and develop your image on your own machine until it’s ready to be deployed.</p>
+
+<h2 id="docker-installation-instructions">Docker Installation Instructions</h2>
+
+<ul>
+  <li><a href="https://www.docker.com/docker-windows">Windows</a></li>
+  <li><a href="https://www.docker.com/docker-mac">Mac</a></li>
+  <li><a href="https://www.docker.com/docker-ubuntu">Ubuntu Linux</a></li>
+</ul>
+
+<h2 id="deploy-docker-image">Deploy Docker Image</h2>
+
+<h3 id="create-github-account">Create GitHub Account</h3>
+
+<h3 id="create-a-docker-hub-account">Create a Docker Hub Account</h3>
+
+<h3 id="push-your-dockerfile-to-a-github-repository">Push your Dockerfile to a GitHub repository</h3>
+
+<h3 id="create-an-automated-build-in-docker-hub">Create an Automated Build in Docker Hub</h3>
+
+<h1 id="create-a-job-definition">Create a Job Definition</h1>
+
+<p><a href="https://docs.aws.amazon.com/batch/latest/userguide/job_definitions.html">Job Definitions</a> specify how jobs are to be run. Some of the attributes specified in a job definition include:</p>
+
+<ul>
+  <li>Which Docker image to use with the container in your job</li>
+  <li>How many vCPUs and how much memory to use with the container</li>
+  <li>The command the container should run when it is started †</li>
+  <li>What (if any) environment variables should be passed to the container when it starts †</li>
+  <li>Any data volumes that should be used with the container (the compute
+environments provided by SciComp include 1TB of scratch space available
+at <code class="highlighter-rouge">/scratch</code>).</li>
+  <li>What (if any) IAM role your job should use for AWS permissions. This
+is important if your job requires permission to access your PIs
+<a href="https://aws.amazon.com/s3/">S3</a> bucket.</li>
+</ul>
+
+<p>† = these items can be overridden in individual job submissions.</p>
+
+<p>A custom script is available to generate a job definition template with
+Center-specific sections already filled in. The script is called
+<code class="highlighter-rouge">get_jobdef_skeleton</code> and is available on the <code class="highlighter-rouge">rhino</code> machines.</p>
+
+<p>This script requires that you supply the name of your PI in the format:
+lastname + dash + first initial. So if your PI is Jane Doe, you would run
+the script as follows:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>get_jobdef_skeleton -p doe-j &gt; jobdef.json
+</code></pre>
+</div>
+
+<p>The file <code class="highlighter-rouge">jobdef.json</code> now contains a partial job definition with the following
+information already filled in:</p>
+
+<ul>
+  <li>Mount points and volumes necessary to make available 1TB of scratch
+space in the directory <code class="highlighter-rouge">/scratch</code>. You are responsible for making sure your
+scripts process all large files in this directory.</li>
+  <li>A Job Role which grants your jobs permissions to access your PI’s S3 bucket.</li>
+</ul>
+
+<p>Before you can use this file, <strong>you will need to edit it</strong> to fill in
+or replace the following values:</p>
+
+<ul>
+  <li><code class="highlighter-rouge">command</code>(optional) The command to run when a job starts. This
+can be overridden when submitting a job.</li>
+  <li><code class="highlighter-rouge">environment</code> (optional) A set of environment variables to pass
+to the containers running your job. Can be overridden when submitting
+a job.</li>
+  <li><code class="highlighter-rouge">memory</code> The amount of memory (in megabytes) your jobs will need. Defaults
+to 2000 (2GB).</li>
+  <li><code class="highlighter-rouge">vcpus</code> The number of CPU cores your job will need. Defaults to 1. You
+should only change this if you know that your job code is explicitly
+parallelized (that is, it uses more than one core).</li>
+</ul>
+
+<h1 id="using-secrets-in-jobs">Using secrets in jobs</h1>
+
+<h1 id="using-scratch-space">Using scratch space</h1>
+
+<p>If you use a job definition as generated by the
+<a href="#create-a-job-definition">get_jobdef_skeleton</a> script, the container
+running your job will have 1TB of writable scratch space available
+in the <code class="highlighter-rouge">/scratch</code> directory. You are responsible for ensuring that all
+large files generated in your job will live in this directory; if you
+write them elsewhere, you’ll run out of space very quickly.</p>
+
+<p>Scratch space is ephemeral; any results you want to keep should be copied
+to S3.</p>
+
+<h1 id="using-s3-in-jobs">Using S3 in jobs</h1>
+
+<p>The Center’s policies require that all of our <code class="highlighter-rouge">S3</code> buckets be encrypted.
+When copying files to or from <code class="highlighter-rouge">S3</code>, be sure to use the
+<code class="highlighter-rouge">--sse AES256</code> flag in the AWS CLI, or pass the parameter
+<code class="highlighter-rouge">ServerSideEncryption='AES256'</code> if using <code class="highlighter-rouge">boto3</code>.</p>
+
+<p>If you don’t set this flag, you will get cryptic, counterintuitive
+error messages (such as <code class="highlighter-rouge">Access Denied</code>).</p>
+
+<h1 id="submit-your-job">Submit your job</h1>
+
+<h1 id="monitor-job-progress">Monitor job progress</h1>
+
+<h1 id="examples">Examples</h1>
+
+<h2 id="using-fetch-and-run">Using fetch-and-run</h2>
+
+<h2 id="using-a-script-baked-in-to-a-docker-image">Using a script baked-in to a Docker image</h2>
+
+<h1 id="references">References</h1>
+
+<h1 id="future-plans">Future plans</h1>
+
+<h1 id="questions-or-comments">Questions or Comments</h1>
+
+<p>Please direct all questions and feedback to <strong>scicomp@fredhutch.org</strong>.</p>
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Using AWS Batch at Fred Hutch</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li>
+            
+              Using AWS Batch at Fred Hutch
+            
+            </li>
+            
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p></p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
