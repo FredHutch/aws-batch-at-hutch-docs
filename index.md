@@ -167,6 +167,9 @@ or replace the following values:
 * `vcpus` The number of CPU cores your job will need. Defaults to 1. You
   should only change this if you know that your job code is explicitly
   parallelized (that is, it uses more than one core).
+* `jobDefinitionName`  The name of the job definition.
+* `image` Change this if you don't want to use the default Docker image
+  provided by SciComp.
 
 
 
@@ -184,6 +187,12 @@ write them elsewhere, you'll run out of space very quickly.
 Scratch space is ephemeral; any results you want to keep should be copied
 to S3.
 
+Note that AWS Batch may run several containers on the same instance,
+in which case they will all use the same scratch space. This means
+all jobs on the container must share the 1TB of scratch space. You must also take care to use unique filenames, otherwise files created by one
+job could be overwritten by files from other jobs running on the same
+instance.
+
 # Using S3 in jobs
 
 The Center's policies require that all of our `S3` buckets be encrypted.
@@ -195,6 +204,51 @@ If you don't set this flag, you will get cryptic, counterintuitive
 error messages (such as `Access Denied`).
 
 # Submit your job
+
+There are currently two ways to submit jobs:
+
+1. via the AWS Command Line Interface (CLI): `aws batch submit-job`.
+   Recommended for launching one or two jobs.
+1. Using Python's `boto3` library. Recommended for launching
+   larger numbers of jobs.
+
+We are looking into various tools to to manage the launching
+of large numbers of jobs, and to orchestrate workflows and pipelines.
+
+## Submitting your job via the AWS CLI
+
+The easiest way to submit a job is to generate a JSON skeleton
+to pass to [`aws batch submit-job`](https://docs.aws.amazon.com/cli/latest/reference/batch/submit-job.html).
+Generate it with this command:
+
+```
+aws batch submit-job --generate-cli-skeleton > job.json
+```
+
+Now edit `job.json`, being sure to fill in the following fields:
+
+* `jobName` - a unique name for your job, which should include
+  your HutchNet ID.
+* `jobQueue` - the name of the job queue to submit to (which
+   has the same name as the compute environment that will be used).
+   In most cases, you can use the `medium` queue.
+* `jobDefinition` The name and version of the job definition to use.
+   This will be a string followed by a colon and version number, for
+   example: `myJobDef:7`. You can see all job definitions with
+   [`aws batch describe-job-definitions`](https://docs.aws.amazon.com/cli/latest/reference/batch/describe-job-definitions.html),
+  optionally passing a `--job-definitions` parameter with the name
+  of one (or more) job definitions. This will show you each version
+  of the specified definition(s).
+* If you are using [fetch-and-run](#using-fetch-and-run), do NOT edit
+  the `command` field. If you are not using `fetch-and-run` you may
+  want to edit this field to override the default command.
+  
+
+## Submitting your job via `boto3`
+
+
+
+
 
 # Monitor job progress
 

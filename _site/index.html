@@ -58,9 +58,6 @@
             
             
           
-            
-            
-          
         </div>
       </nav>
     
@@ -102,7 +99,11 @@
   <li><a href="#using-secrets-in-jobs" id="markdown-toc-using-secrets-in-jobs">Using secrets in jobs</a></li>
   <li><a href="#using-scratch-space" id="markdown-toc-using-scratch-space">Using scratch space</a></li>
   <li><a href="#using-s3-in-jobs" id="markdown-toc-using-s3-in-jobs">Using S3 in jobs</a></li>
-  <li><a href="#submit-your-job" id="markdown-toc-submit-your-job">Submit your job</a></li>
+  <li><a href="#submit-your-job" id="markdown-toc-submit-your-job">Submit your job</a>    <ul>
+      <li><a href="#submitting-your-job-via-the-aws-cli" id="markdown-toc-submitting-your-job-via-the-aws-cli">Submitting your job via the AWS CLI</a></li>
+      <li><a href="#submitting-your-job-via-boto3" id="markdown-toc-submitting-your-job-via-boto3">Submitting your job via <code class="highlighter-rouge">boto3</code></a></li>
+    </ul>
+  </li>
   <li><a href="#monitor-job-progress" id="markdown-toc-monitor-job-progress">Monitor job progress</a></li>
   <li><a href="#examples" id="markdown-toc-examples">Examples</a>    <ul>
       <li><a href="#using-fetch-and-run" id="markdown-toc-using-fetch-and-run">Using fetch-and-run</a></li>
@@ -272,6 +273,9 @@ to 2000 (2GB).</li>
   <li><code class="highlighter-rouge">vcpus</code> The number of CPU cores your job will need. Defaults to 1. You
 should only change this if you know that your job code is explicitly
 parallelized (that is, it uses more than one core).</li>
+  <li><code class="highlighter-rouge">jobDefinitionName</code>  The name of the job definition.</li>
+  <li><code class="highlighter-rouge">image</code> Change this if you don’t want to use the default Docker image
+provided by SciComp.</li>
 </ul>
 
 <h1 id="using-secrets-in-jobs">Using secrets in jobs</h1>
@@ -288,6 +292,12 @@ write them elsewhere, you’ll run out of space very quickly.</p>
 <p>Scratch space is ephemeral; any results you want to keep should be copied
 to S3.</p>
 
+<p>Note that AWS Batch may run several containers on the same instance,
+in which case they will all use the same scratch space. This means
+all jobs on the container must share the 1TB of scratch space. You must also take care to use unique filenames, otherwise files created by one
+job could be overwritten by files from other jobs running on the same
+instance.</p>
+
 <h1 id="using-s3-in-jobs">Using S3 in jobs</h1>
 
 <p>The Center’s policies require that all of our <code class="highlighter-rouge">S3</code> buckets be encrypted.
@@ -299,6 +309,50 @@ When copying files to or from <code class="highlighter-rouge">S3</code>, be sure
 error messages (such as <code class="highlighter-rouge">Access Denied</code>).</p>
 
 <h1 id="submit-your-job">Submit your job</h1>
+
+<p>There are currently two ways to submit jobs:</p>
+
+<ol>
+  <li>via the AWS Command Line Interface (CLI): <code class="highlighter-rouge">aws batch submit-job</code>.
+Recommended for launching one or two jobs.</li>
+  <li>Using Python’s <code class="highlighter-rouge">boto3</code> library. Recommended for launching
+larger numbers of jobs.</li>
+</ol>
+
+<p>We are looking into various tools to to manage the launching
+of large numbers of jobs, and to orchestrate workflows and pipelines.</p>
+
+<h2 id="submitting-your-job-via-the-aws-cli">Submitting your job via the AWS CLI</h2>
+
+<p>The easiest way to submit a job is to generate a JSON skeleton
+to pass to <a href="https://docs.aws.amazon.com/cli/latest/reference/batch/submit-job.html"><code class="highlighter-rouge">aws batch submit-job</code></a>.
+Generate it with this command:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>aws batch submit-job --generate-cli-skeleton &gt; job.json
+</code></pre>
+</div>
+
+<p>Now edit <code class="highlighter-rouge">job.json</code>, being sure to fill in the following fields:</p>
+
+<ul>
+  <li><code class="highlighter-rouge">jobName</code> - a unique name for your job, which should include
+your HutchNet ID.</li>
+  <li><code class="highlighter-rouge">jobQueue</code> - the name of the job queue to submit to (which
+ has the same name as the compute environment that will be used).
+ In most cases, you can use the <code class="highlighter-rouge">medium</code> queue.</li>
+  <li><code class="highlighter-rouge">jobDefinition</code> The name and version of the job definition to use.
+ This will be a string followed by a colon and version number, for
+ example: <code class="highlighter-rouge">myJobDef:7</code>. You can see all job definitions with
+ <a href="https://docs.aws.amazon.com/cli/latest/reference/batch/describe-job-definitions.html"><code class="highlighter-rouge">aws batch describe-job-definitions</code></a>,
+optionally passing a <code class="highlighter-rouge">--job-definitions</code> parameter with the name
+of one (or more) job definitions. This will show you each version
+of the specified definition(s).</li>
+  <li>If you are using <a href="#using-fetch-and-run">fetch-and-run</a>, do NOT edit
+the <code class="highlighter-rouge">command</code> field. If you are not using <code class="highlighter-rouge">fetch-and-run</code> you may
+want to edit this field to override the default command.</li>
+</ul>
+
+<h2 id="submitting-your-job-via-boto3">Submitting your job via <code class="highlighter-rouge">boto3</code></h2>
 
 <h1 id="monitor-job-progress">Monitor job progress</h1>
 
