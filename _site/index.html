@@ -101,7 +101,11 @@
   <li><a href="#using-s3-in-jobs" id="markdown-toc-using-s3-in-jobs">Using S3 in jobs</a></li>
   <li><a href="#submit-your-job" id="markdown-toc-submit-your-job">Submit your job</a>    <ul>
       <li><a href="#submitting-your-job-via-the-aws-cli" id="markdown-toc-submitting-your-job-via-the-aws-cli">Submitting your job via the AWS CLI</a></li>
-      <li><a href="#submitting-your-job-via-boto3" id="markdown-toc-submitting-your-job-via-boto3">Submitting your job via <code class="highlighter-rouge">boto3</code></a></li>
+      <li><a href="#submitting-your-job-via-boto3" id="markdown-toc-submitting-your-job-via-boto3">Submitting your job via <code class="highlighter-rouge">boto3</code></a>        <ul>
+          <li><a href="#notes-on-using-python" id="markdown-toc-notes-on-using-python">Notes on using Python</a></li>
+          <li><a href="#submitting-your-job" id="markdown-toc-submitting-your-job">Submitting your job</a></li>
+        </ul>
+      </li>
     </ul>
   </li>
   <li><a href="#monitor-job-progress" id="markdown-toc-monitor-job-progress">Monitor job progress</a></li>
@@ -336,7 +340,7 @@ Generate it with this command:</p>
 
 <ul>
   <li><code class="highlighter-rouge">jobName</code> - a unique name for your job, which should include
-your HutchNet ID.</li>
+your HutchNet ID. . The first character must be alphanumeric, and up to 128 letters (uppercase and lowercase), numbers, hyphens, and underscores are allowed.</li>
   <li><code class="highlighter-rouge">jobQueue</code> - the name of the job queue to submit to (which
  has the same name as the compute environment that will be used).
  In most cases, you can use the <code class="highlighter-rouge">medium</code> queue.</li>
@@ -350,11 +354,163 @@ of the specified definition(s).</li>
   <li>If you are using <a href="#using-fetch-and-run">fetch-and-run</a>, do NOT edit
 the <code class="highlighter-rouge">command</code> field. If you are not using <code class="highlighter-rouge">fetch-and-run</code> you may
 want to edit this field to override the default command.</li>
+  <li>Set the <code class="highlighter-rouge">environment</code> field to pass environment variables to your jobs.
+This is particularly important when using <code class="highlighter-rouge">fetch-and-run</code> jobs; these
+require that several environment variables be set. Environment variables
+take the form of a list of key-value pairs with the values <code class="highlighter-rouge">name</code> and
+<code class="highlighter-rouge">value</code>, see the following example.</li>
 </ul>
+
+<div class="language-json highlighter-rouge"><pre class="highlight"><code><span class="s2">"environment"</span><span class="err">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+  </span><span class="p">{</span><span class="w">
+    </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"FAVORITE_COLOR"</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"blue"</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="p">{</span><span class="w">
+    </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"FAVORITE_MONTH"</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"December"</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">]</span><span class="w">
+</span></code></pre>
+</div>
+
+<p>Now, <strong>delete</strong> the following sections of the file, as we want to
+use the default values for them:</p>
+
+<ul>
+  <li><code class="highlighter-rouge">dependsOn</code> - this job does not depend on any other jobs.</li>
+  <li><code class="highlighter-rouge">parameters</code> - we will not be passing parameters to this job.</li>
+  <li><code class="highlighter-rouge">vcpus</code> in the <code class="highlighter-rouge">containerOverrides</code> section.</li>
+  <li><code class="highlighter-rouge">memory</code> in the <code class="highlighter-rouge">containerOverrides</code> section.</li>
+  <li><code class="highlighter-rouge">retryStrategy</code> section.</li>
+</ul>
+
+<p>With all these changes made, your <code class="highlighter-rouge">job.json</code> file will look something
+like this:</p>
+
+<div class="language-json highlighter-rouge"><pre class="highlight"><code><span class="p">{</span><span class="w">
+    </span><span class="nt">"jobName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"jdoe-test-job"</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"jobQueue"</span><span class="p">:</span><span class="w"> </span><span class="s2">"medium"</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"jobDefinition"</span><span class="p">:</span><span class="w"> </span><span class="s2">"myJobDef:7"</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"containerOverrides"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nt">"command"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+            </span><span class="s2">"echo"</span><span class="p">,</span><span class="w">
+            </span><span class="s2">"hello"</span><span class="p">,</span><span class="w">
+            </span><span class="s2">"world"</span><span class="w">
+        </span><span class="p">],</span><span class="w">
+        </span><span class="nt">"environment"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+            </span><span class="p">{</span><span class="w">
+                </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"FAVORITE_COLOR"</span><span class="p">,</span><span class="w">
+                </span><span class="nt">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"blue"</span><span class="w">
+            </span><span class="p">},</span><span class="w">
+            </span><span class="p">{</span><span class="w">
+                </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"FAVORITE_MONTH"</span><span class="p">,</span><span class="w">
+                </span><span class="nt">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"December"</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">]</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre>
+</div>
+
+<p>Once your <code class="highlighter-rouge">job.json</code> file has been properly edited, you can
+submit your job as follows:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>aws batch submit-job --cli-input-json file://job.json
+</code></pre>
+</div>
+
+<p>This will return some JSON that includes the job ID. Be sure and save
+that as you will need it to track the progress of your job.</p>
 
 <h2 id="submitting-your-job-via-boto3">Submitting your job via <code class="highlighter-rouge">boto3</code></h2>
 
+<h3 id="notes-on-using-python">Notes on using Python</h3>
+
+<ul>
+  <li>We strongly encourage the use of Python 3. It has been the current
+version of the language since 2008. Python 2 will eventually no longer
+be supported.</li>
+  <li>We recommend using <a href="http://docs.python-guide.org/en/latest/dev/virtualenvs/">Virtual Environments</a>,
+particularly <a href="https://virtualenvwrapper.readthedocs.io/en/latest/">virtualenvwrapper</a>,
+to keep the dependencies of your various projects isolated from each
+other.</li>
+</ul>
+
+<p>Assuming <code class="highlighter-rouge">virtualenvwrapper</code>  and <code class="highlighter-rouge">python3</code> are installed and
+a virtual environment is in use, you’d then
+prepare to submit a job via <code class="highlighter-rouge">boto3</code> as follows:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>mkvirtualenv --python $(which python3) boto-env
+pip install boto3
+</code></pre>
+</div>
+
+<h3 id="submitting-your-job">Submitting your job</h3>
+
+<p>Paste the following code into a file called <code class="highlighter-rouge">submit_job.py</code>:</p>
+
+<div class="language-python highlighter-rouge"><pre class="highlight"><code><span class="c">#!/usr/bin/env python3</span>
+<span class="s">"Submit a job to AWS Batch."</span>
+
+<span class="kn">import</span> <span class="nn">boto3</span>
+
+<span class="n">batch</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s">'batch'</span><span class="p">)</span>
+
+<span class="n">response</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">submit_job</span><span class="p">(</span><span class="n">jobName</span><span class="o">=</span><span class="s">'jdoe-test-job'</span><span class="p">,</span> <span class="c"># use your HutchNet ID</span>
+                            <span class="n">jobQueue</span><span class="o">=</span><span class="s">'medium'</span><span class="p">,</span> <span class="c"># sufficient for most jobs</span>
+                            <span class="n">jobDefinition</span><span class="o">=</span><span class="s">'myJobDef:7'</span><span class="p">,</span> <span class="c"># use a real job definition</span>
+                            <span class="n">containerOverrides</span><span class="o">=</span><span class="p">{</span>
+                                <span class="s">"command"</span><span class="p">:</span> <span class="p">[</span><span class="s">'echo'</span><span class="p">,</span> <span class="s">'hello'</span><span class="p">,</span> <span class="s">'world'</span><span class="p">],</span> <span class="c"># optionally override command</span>
+                                <span class="s">"environment"</span><span class="p">:</span> <span class="p">[</span> <span class="c"># optionally set environment variables</span>
+                                    <span class="p">{</span><span class="s">"name"</span><span class="p">:</span> <span class="s">"FAVORITE_COLOR"</span><span class="p">,</span> <span class="s">"value"</span><span class="p">:</span> <span class="s">"blue"</span><span class="p">},</span>
+                                    <span class="p">{</span><span class="s">"name"</span><span class="p">:</span> <span class="s">"FAVORITE_MONTH"</span><span class="p">,</span> <span class="s">"value"</span><span class="p">:</span> <span class="s">"December"</span><span class="p">}</span>
+                                <span class="p">]</span>
+                            <span class="p">})</span>
+
+<span class="k">print</span><span class="p">(</span><span class="s">"Job ID is {}."</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s">'jobId'</span><span class="p">]))</span>
+
+</code></pre>
+</div>
+
+<p>Run it with</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>python3 submit_job.py
+</code></pre>
+</div>
+
+<p>If you had dozens of jobs to submit, you could do it with a <code class="highlighter-rouge">for</code>
+loop in python.</p>
+
 <h1 id="monitor-job-progress">Monitor job progress</h1>
+
+<p>Once your job has been submitted and you have a job ID, you can use it to
+retrieve the job status.</p>
+
+<p>On the <code class="highlighter-rouge">rhino</code> machines or the <code class="highlighter-rouge">gizmo</code> cluster, there’s a quick command
+to get the job output. Be sure and use your actual job ID instead of
+the example one below:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>get_batch_job_log 2c0c87f2-ee7e-4845-9fcb-d747d5559370
+</code></pre>
+</div>
+
+<p>…more to come…describe the hard way….</p>
+
+<p>This command will do it (but substitute your
+own job ID):</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>aws batch describe-jobs --jobs 2c0c87f2-ee7e-4845-9fcb-d747d5559370
+</code></pre>
+</div>
+
+<p>Note that you can add additional job IDs (separated by a space) to
+get the status of multiple jobs.</p>
+
+<p>This command will return JSON that gives information about your jobs.
+<code class="highlighter-rouge">status</code> is the most interesting field. Once a job has reached
+the <code class="highlighter-rouge">RUNNING</code> state, there will be a <code class="highlighter-rouge">logStreamName</code> field that
+you can use to query</p>
 
 <h1 id="examples">Examples</h1>
 

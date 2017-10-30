@@ -228,7 +228,7 @@ aws batch submit-job --generate-cli-skeleton > job.json
 Now edit `job.json`, being sure to fill in the following fields:
 
 * `jobName` - a unique name for your job, which should include
-  your HutchNet ID.
+  your HutchNet ID. . The first character must be alphanumeric, and up to 128 letters (uppercase and lowercase), numbers, hyphens, and underscores are allowed.
 * `jobQueue` - the name of the job queue to submit to (which
    has the same name as the compute environment that will be used).
    In most cases, you can use the `medium` queue.
@@ -242,15 +242,162 @@ Now edit `job.json`, being sure to fill in the following fields:
 * If you are using [fetch-and-run](#using-fetch-and-run), do NOT edit
   the `command` field. If you are not using `fetch-and-run` you may
   want to edit this field to override the default command.
-  
+* Set the `environment` field to pass environment variables to your jobs.
+  This is particularly important when using `fetch-and-run` jobs; these
+  require that several environment variables be set. Environment variables
+  take the form of a list of key-value pairs with the values `name` and
+  `value`, see the following example.
+
+```json
+"environment": [
+  {
+    "name": "FAVORITE_COLOR",
+    "value": "blue"
+  },
+  {
+    "name": "FAVORITE_MONTH",
+    "value": "December"
+  }
+]
+```  
+
+Now, **delete** the following sections of the file, as we want to
+use the default values for them:
+
+* `dependsOn` - this job does not depend on any other jobs.
+* `parameters` - we will not be passing parameters to this job.
+* `vcpus` in the `containerOverrides` section.
+* `memory` in the `containerOverrides` section.
+* `retryStrategy` section.
+
+With all these changes made, your `job.json` file will look something
+like this:
+
+```json
+{
+    "jobName": "jdoe-test-job",
+    "jobQueue": "medium",
+    "jobDefinition": "myJobDef:7",
+    "containerOverrides": {
+        "command": [
+            "echo",
+            "hello",
+            "world"
+        ],
+        "environment": [
+            {
+                "name": "FAVORITE_COLOR",
+                "value": "blue"
+            },
+            {
+                "name": "FAVORITE_MONTH",
+                "value": "December"
+            }
+        ]
+    }
+}
+```
+
+
+Once your `job.json` file has been properly edited, you can
+submit your job as follows:
+
+```
+aws batch submit-job --cli-input-json file://job.json
+```
+
+This will return some JSON that includes the job ID. Be sure and save
+that as you will need it to track the progress of your job.
 
 ## Submitting your job via `boto3`
 
+### Notes on using Python
 
+* We strongly encourage the use of Python 3. It has been the current
+  version of the language since 2008. Python 2 will eventually no longer
+  be supported.
+* We recommend using [Virtual Environments](http://docs.python-guide.org/en/latest/dev/virtualenvs/),
+  particularly [virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/),
+  to keep the dependencies of your various projects isolated from each
+  other.
 
+Assuming `virtualenvwrapper`  and `python3` are installed and
+a virtual environment is in use, you'd then
+prepare to submit a job via `boto3` as follows:
+
+```
+mkvirtualenv --python $(which python3) boto-env
+pip install boto3
+```
+
+### Submitting your job
+
+Paste the following code into a file called `submit_job.py`:
+
+```python
+#!/usr/bin/env python3
+"Submit a job to AWS Batch."
+
+import boto3
+
+batch = boto3.client('batch')
+
+response = batch.submit_job(jobName='jdoe-test-job', # use your HutchNet ID
+                            jobQueue='medium', # sufficient for most jobs
+                            jobDefinition='myJobDef:7', # use a real job definition
+                            containerOverrides={
+                                "command": ['echo', 'hello', 'world'], # optionally override command
+                                "environment": [ # optionally set environment variables
+                                    {"name": "FAVORITE_COLOR", "value": "blue"},
+                                    {"name": "FAVORITE_MONTH", "value": "December"}
+                                ]
+                            })
+
+print("Job ID is {}.".format(response['jobId']))
+
+```
+
+Run it with
+
+```
+python3 submit_job.py
+```
+
+If you had dozens of jobs to submit, you could do it with a `for`
+loop in python.
 
 
 # Monitor job progress
+
+Once your job has been submitted and you have a job ID, you can use it to
+retrieve the job status.
+
+On the `rhino` machines or the `gizmo` cluster, there's a quick command
+to get the job output. Be sure and use your actual job ID instead of
+the example one below:
+
+```
+get_batch_job_log 2c0c87f2-ee7e-4845-9fcb-d747d5559370
+```
+
+
+...more to come...describe the hard way....
+
+This command will do it (but substitute your
+own job ID):
+
+```
+aws batch describe-jobs --jobs 2c0c87f2-ee7e-4845-9fcb-d747d5559370
+```
+
+Note that you can add additional job IDs (separated by a space) to
+get the status of multiple jobs.
+
+This command will return JSON that gives information about your jobs.
+`status` is the most interesting field. Once a job has reached
+the `RUNNING` state, there will be a `logStreamName` field that
+you can use to query
+
 
 # Examples
 
