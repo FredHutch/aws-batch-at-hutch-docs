@@ -384,7 +384,8 @@ that command through `jq` (which you may have to
 
 
 ```
-aws batch describe-jobs --jobs  2c0c87f2-ee7e-4845-9fcb-d747d5559370 | jq -r '.jobs[0].status'
+aws batch describe-jobs --jobs  2c0c87f2-ee7e-4845-9fcb-d747d5559370 \
+| jq -r '.jobs[0].status'
 ```
 
 This will give you the status (one of `SUBMITTED, PENDING, RUNNABLE,
