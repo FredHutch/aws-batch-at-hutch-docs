@@ -372,6 +372,29 @@ loop in python.
 Once your job has been submitted and you have a job ID, you can use it to
 retrieve the job status.
 
+The following command will give comprehensive information about your job,
+given a job ID:
+
+```
+aws batch describe-jobs --jobs 2c0c87f2-ee7e-4845-9fcb-d747d5559370
+```
+If you are just interested in the status of the job, you can pipe
+that command through `jq` (which you may have to
+[install](https://stedolan.github.io/jq/download/) first) as follows:
+
+
+```
+aws batch describe-jobs --jobs  2c0c87f2-ee7e-4845-9fcb-d747d5559370 | jq -r '.jobs[0].status'
+```
+
+This will give you the status (one of `SUBMITTED, PENDING, RUNNABLE,
+  STARTING, RUNNING, FAILED, SUCCEEDED`).
+
+# View Job Logs
+
+
+### On Rhino or Gizmo
+
 On the `rhino` machines or the `gizmo` cluster, there's a quick command
 to get the job output. Be sure and use your actual job ID instead of
 the example one below:
@@ -380,23 +403,62 @@ the example one below:
 get_batch_job_log 2c0c87f2-ee7e-4845-9fcb-d747d5559370
 ```
 
+You can also pass a log stream ID (see below) instead of a job ID.
 
-...more to come...describe the hard way....
 
-This command will do it (but substitute your
-own job ID):
+## On other systems
+
+If you are on another system without the `get_batch_job_log` script
+(such as your laptop), you can still monitor job logs, but you need to
+get the log stream ID first.
+
+To get the log stream for a job, run this command:
+
 
 ```
 aws batch describe-jobs --jobs 2c0c87f2-ee7e-4845-9fcb-d747d5559370
 ```
 
-Note that you can add additional job IDs (separated by a space) to
-get the status of multiple jobs.
+(Note that you can add additional job IDs (separated by a space) to
+get the status of multiple jobs.)
 
-This command will return JSON that gives information about your jobs.
-`status` is the most interesting field. Once a job has reached
+Once a job has reached
 the `RUNNING` state, there will be a `logStreamName` field that
-you can use to query
+you can use to view the job's output. To extract only the `logStreamName`,
+pipe the command through [jq](https://stedolan.github.io/jq/download/):
+
+```
+aws batch describe-jobs --jobs 2c0c87f2-ee7e-4845-9fcb-d747d5559370 \
+jq -r '.jobs[0].container.logStreamName'
+```
+
+Once you have the log stream name, you can view the logs:
+
+```
+aws logs get-log-events --log-group-name /aws/batch/job \
+--log-stream-name jobdef-name/default/522d32fc-5280-406c-ac38-f6413e716c86
+```
+
+This outputs other information (in JSON format) along with your log
+messages and can be difficult to read. To read it like an ordinary
+log file, pipe the command through `jq`:
+
+```
+aws logs get-log-events --log-group-name /aws/batch/job \
+ --log-stream-name jobdef-name/default/522d32fc-5280-406c-ac38-f6413e716c86 \
+| jq -r '.events[]| .message'
+```
+
+**NOTE**: `aws logs get-log-events` will only retrieve 1MB worth of
+log entries at a time (up to 10,000 entries). If your job has created
+more than 1MB of output, read the
+[documentation](https://docs.aws.amazon.com/cli/latest/reference/logs/get-log-events.html)
+of the `aws batch get-log-events` command to learn about retrieving multiple
+batches of log output. (The `get_batch_job_log` script on rhino/gizmo automatically
+handles multiple batches of job output, using the
+[equivalent command](https://boto3.readthedocs.io/en/latest/reference/services/logs.html#CloudWatchLogs.Client.get_log_events)
+in `boto3`.
+
 
 
 # Examples
