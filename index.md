@@ -25,11 +25,17 @@ container.
 
 SciComp provides access to AWS Batch in two ways:
 
-* Via the [AWS Command Line Interface (CLI)](https://aws.amazon.com/cli/)
-* Via programmatic interfaces such as Python's [boto3](https://boto3.readthedocs.io/en/latest/reference/core/boto3.html). The
+* Via the [AWS Command Line Interface (CLI)](https://docs.aws.amazon.com/cli/latest/reference/batch/index.html).
+* Via programmatic interfaces such as Python's [boto3](https://boto3.readthedocs.io/en/latest/reference/services/batch.html#client). The
   earlier version of this library (`boto`) is deprecated and should not be used.
 
-Console (web/GUI) access to AWS batch is not available to end users at the Center.
+Access to the AWS Management Console (the web/GUI interface), is not available
+to end users at the Center. However, there is a customized, read-only
+[console](https://batch-dashboard.fhcrc.org/) available which displays information
+about compute environments, queues, and running jobs. This console is
+in its infancy and currently lacks many features, but they will be added soon.
+Please report any [issues](https://github.com/FredHutch/batch-dashboard/issues/new)
+you discover with this console.
 
 
 # Request access
@@ -364,7 +370,148 @@ python3 submit_job.py
 ```
 
 If you had dozens of jobs to submit, you could do it with a `for`
-loop in python.
+loop in python (or see the next section).
+
+## Submitting with the `run_batch_jobs` utility
+
+A utility available on the `rhino` machines, `run_batch_job`, is designed
+to help you launch multiple related jobs.
+
+An example use case might be running a job for every file
+in a certain location in your PI's S3 bucket.
+
+Entering the command with the `-h` flag gives you a detailed help message:
+
+```
+run_batch_jobs -h
+usage: run_batch_jobs [-h] [-q QUEUE] [-d JOBDEF] [-n NUMJOBS] [--name NAME]
+                      [-f FUNC] [-j JSON] [-x CPUS] [-m MEMORY]
+                      [-p PARAMETERS] [-a ATTEMPTS] [-c COMMAND]
+                      [-e ENVIRONMENT]
+
+Start a set of AWS Batch jobs. See full documentation at
+http://bit.ly/HutchBatchDocs/#submitting-with-the-run_batch_jobs-utility
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -q QUEUE, --queue QUEUE
+                        Queue Name (default: small)
+  -d JOBDEF, --jobdef JOBDEF
+                        Job definition name:version. (default: hello:2)
+  -n NUMJOBS, --numjobs NUMJOBS
+                        Number of jobs to run. (default: 1)
+  --name NAME           Name of job group (your username and job number will
+                        be injected). (default: sample_job)
+  -f FUNC, --func FUNC  Python path to a function to customize job, see link
+                        above for full docs. Example: myscript.myfunc
+                        (default: None)
+  -j JSON, --json JSON  Output JSON instead of running jobs. JSON can be used
+                        with `aws batch submit-job --cli-input-json`. Makes
+                        most sense with `--numjobs 1`. (default: None)
+  -x CPUS, --cpus CPUS  Number of CPUs, if overriding value in job defnition.
+                        (default: None)
+  -m MEMORY, --memory MEMORY
+                        GB of memory, if overriding value in job definition.
+                        (default: None)
+  -p PARAMETERS, --parameters PARAMETERS
+                        Parameters to replace placeholders in job definition.
+                        Format as a single-quoted JSON list of
+                        objects/dictionaries. (default: None)
+  -a ATTEMPTS, --attempts ATTEMPTS
+                        Number of retry attempts, if overriding job
+                        definition. (default: None)
+  -c COMMAND, --command COMMAND
+                        Command, if overriding job definition. Example:
+                        ["echo", "hello", "world"] (default: None)
+  -e ENVIRONMENT, --environment ENVIRONMENT
+                        Environment to replace placeholders in job definition.
+                        Format as a single-quoted JSON object/dictionary.
+                        (default: None)
+```
+
+The real utility of this tool is the `--func` (or `-f`) flag, which
+allows you to pass a custom Python 3 function (which you write) that modifies
+the job submission information for each job submitted by `run_batch_jobs`.
+
+Write a function that takes two parameters. The first is an object
+(call it `obj`) containing
+job information, and the second is an iteration number
+(call it `job_num`)
+representing the
+individual job that is being started. For example, if you called
+`run_batch_jobs` with `--numjobs 10`, your function would be called 10
+times. The first time through, the value of `job_num` would be 1,
+and the last time through, the value of `job_num` would be 10.
+
+Here's an example, which tells the job to print out the job number
+(where you can view it in the job logs).
+
+If you save the following code in a file called `testscript.py`, you can
+run it with this command line:
+
+```
+run_batch_jobs --func testscript.testfunc  --numjobs 10 # start 10 jobs
+```
+
+**Contents of testscript.py**:
+
+```python
+#!/usr/bin/env python3
+
+"""
+An example of a custom function to use with the `run_batch_jobs` utility.
+See its full documentation at:
+https://fredhutch.github.io/aws-batch-at-hutch-docs/#submitting-with-the-run_batch_jobs-utility
+"""
+
+import json
+
+
+def testfunc(obj, job_num):
+    """A function that customizes job input.
+    Args:
+        obj (dict):    An object containing all information about the job, which may
+                       be partially filled in by the command-line options passed
+                       to `run_batch_jobs`.
+        job_num (int): A number representing this job's index. For example, if you
+                       told `run_batch_jobs` to start 10 jobs, this number
+                       will be 1 the first time this function is called, and 10 the last time.
+    Returns:
+        dict: `obj` modified by your custom logic.
+    """
+
+    # In this example, we will tell our job to print out a custom message
+    # that includes the job iteration number.
+
+    # Let's print out the input object we receive, just to see what it looks like:
+    print("Before:")
+    print(obj)
+    print()
+
+    command_object = ["echo", "hello from iteration {}".format(job_num)]
+    obj['containerOverrides']['command'] = command_object
+
+    # Let's print out the job object again to see what it looks like after our
+    # change:
+    print("After:")
+    print(obj)
+    print()
+
+    # Here we could make any other changes we want to the job object,
+    # based on the job iteration number (job_num). For example,
+    # if 10 jobs are started, you could do some processing on
+    # one of 10 files in S3.
+
+    # now that we have transformed `obj` to our heart's content, we
+    # return the modified version:
+
+    return obj
+
+```
+
+Please report any [issues](https://github.com/FredHutch/aws-batch-wrapper/issues/new)
+you discover with the `run_batch_jobs` script.
+
 
 
 # Monitor job progress
