@@ -286,8 +286,7 @@ like this:
     "containerOverrides": {
         "command": [
             "echo",
-            "hello",
-            "world"
+            "hello world"
         ],
         "environment": [
             {
@@ -606,7 +605,7 @@ log entries at a time (up to 10,000 entries). If your job has created
 more than 1MB of output, read the
 [documentation](https://docs.aws.amazon.com/cli/latest/reference/logs/get-log-events.html)
 of the `aws batch get-log-events` command to learn about retrieving multiple
-batches of log output. (The `get_batch_job_log` script on rhino/gizmo automatically
+batches of log output. (The [get_batch_job_log](#on-rhino-or-gizmo) script on rhino/gizmo automatically
 handles multiple batches of job output, using the
 [equivalent command](https://boto3.readthedocs.io/en/latest/reference/services/logs.html#CloudWatchLogs.Client.get_log_events)
 in `boto3`.
