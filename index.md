@@ -128,14 +128,14 @@ and develop your image on your own machine until it's ready to be deployed.
 [Job Definitions](https://docs.aws.amazon.com/batch/latest/userguide/job_definitions.html) specify how jobs are to be run. Some of the attributes specified in a job definition include:
 
 * Which Docker image to use with the container in your job
-* How many vCPUs and how much memory to use with the container
+* How many vCPUs and how much memory to use with the container †
 * The command the container should run when it is started †
 * What (if any) environment variables should be passed to the container when it starts †
 * Any data volumes that should be used with the container (the compute
   environments provided by SciComp include 1TB of scratch space available
   at `/scratch`).
 * What (if any) IAM role your job should use for AWS permissions. This
-  is important if your job requires permission to access your PIs
+  is important if your job requires permission to access your PI's
   [S3](https://aws.amazon.com/s3/) bucket.
 
 † = these items can be overridden in individual job submissions.
@@ -163,20 +163,19 @@ information already filled in:
 Before you can use this file, **you will need to edit it** to fill in
 or replace the following values:
 
-* `command`(optional) The command to run when a job starts. This
-  can be overridden when submitting a job.
+* `command`(optional) The command to run when a job starts. †
 * `environment` (optional) A set of environment variables to pass
-  to the containers running your job. Can be overridden when submitting
-  a job.
+  to the containers running your job. †
 * `memory` The amount of memory (in megabytes) your jobs will need. Defaults
-  to 2000 (2GB).
+  to 2000 (2GB). †
 * `vcpus` The number of CPU cores your job will need. Defaults to 1. You
   should only change this if you know that your job code is explicitly
-  parallelized (that is, it uses more than one core).
+  parallelized (that is, it uses more than one core). †
 * `jobDefinitionName`  The name of the job definition.
 * `image` Change this if you don't want to use the default Docker image
   provided by SciComp.
 
+† = Can be overridden when submitting jobs.
 
 
 # Using secrets in jobs
@@ -211,15 +210,15 @@ error messages (such as `Access Denied`).
 
 # Submit your job
 
-There are currently two ways to submit jobs:
+There are currently three ways to submit jobs:
 
 1. via the AWS Command Line Interface (CLI): `aws batch submit-job`.
    Recommended for launching one or two jobs.
 1. Using Python's `boto3` library. Recommended for launching
    larger numbers of jobs.
+1. The [run-batch-jobs](#submitting-with-the-run_batch_jobs-utility) utility.
 
-We are looking into various tools to to manage the launching
-of large numbers of jobs, and to orchestrate workflows and pipelines.
+We are looking into various tools to orchestrate workflows and pipelines.
 
 ## Submitting your job via the AWS CLI
 
@@ -327,14 +326,14 @@ that as you will need it to track the progress of your job.
   to keep the dependencies of your various projects isolated from each
   other.
 
-Assuming `virtualenvwrapper`  and `python3` are installed and
-a virtual environment is in use, you'd then
-prepare to submit a job via `boto3` as follows:
+Assuming `virtualenvwrapper`  and `python3` are installed, create a virtual environment as follows:
 
 ```
 mkvirtualenv --python $(which python3) boto-env
-pip install boto3
+pip install boto3 # installs into the virtual environment
 ```
+
+
 
 ### Submitting your job
 
@@ -348,7 +347,7 @@ import boto3
 
 batch = boto3.client('batch')
 
-response = batch.submit_job(jobName='jdoe-test-job', # use your HutchNet ID
+response = batch.submit_job(jobName='jdoe-test-job', # use your HutchNet ID instead of 'jdoe'
                             jobQueue='medium', # sufficient for most jobs
                             jobDefinition='myJobDef:7', # use a real job definition
                             containerOverrides={
@@ -383,7 +382,7 @@ in a certain location in your PI's S3 bucket.
 Entering the command with the `-h` flag gives you a detailed help message:
 
 ```
-run_batch_jobs -h
+$ run_batch_jobs -h
 usage: run_batch_jobs [-h] [-q QUEUE] [-d JOBDEF] [-n NUMJOBS] [--name NAME]
                       [-f FUNC] [-j JSON] [-x CPUS] [-m MEMORY]
                       [-p PARAMETERS] [-a ATTEMPTS] [-c COMMAND]
@@ -422,7 +421,7 @@ optional arguments:
                         definition. (default: None)
   -c COMMAND, --command COMMAND
                         Command, if overriding job definition. Example:
-                        ["echo", "hello", "world"] (default: None)
+                       '["echo", "hello world"]' (default: None)
   -e ENVIRONMENT, --environment ENVIRONMENT
                         Environment to replace placeholders in job definition.
                         Format as a single-quoted JSON object/dictionary.
@@ -433,10 +432,11 @@ The real utility of this tool is the `--func` (or `-f`) flag, which
 allows you to pass a custom Python 3 function (which you write) that modifies
 the job submission information for each job submitted by `run_batch_jobs`.
 
-Write a function that takes two parameters. The first is an object
-(call it `obj`) containing
+Write a function that takes two parameters
+(call them `obj` and `job_num`).
+The first is an object
+ containing
 job information, and the second is an iteration number
-(call it `job_num`)
 representing the
 individual job that is being started. For example, if you called
 `run_batch_jobs` with `--numjobs 10`, your function would be called 10
@@ -508,6 +508,10 @@ def testfunc(obj, job_num):
     return obj
 
 ```
+
+The `run_batch_jobs` utility prints out JSON
+containing the job name and job ID of each job
+it started.
 
 Please report any [issues](https://github.com/FredHutch/aws-batch-wrapper/issues/new)
 you discover with the `run_batch_jobs` script.
