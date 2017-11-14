@@ -2,6 +2,11 @@
 layout: default
 ---
 
+<!--
+Short URL for this document, to write on whiteboards, etc:
+bit.ly/HutchBatchDocs
+-->
+
 <h1 class="no_toc">DRAFT</h1>
 
 This documentation is still being written. Many sections are empty.
@@ -32,8 +37,7 @@ SciComp provides access to AWS Batch in two ways:
 Access to the AWS Management Console (the web/GUI interface), is not available
 to end users at the Center. However, there is a customized, read-only
 [console](https://batch-dashboard.fhcrc.org/) available which displays information
-about compute environments, queues, and running jobs. This console is
-in its infancy and currently lacks many features, but they will be added soon.
+about compute environments, queues, job definitions, and jobs.
 Please report any [issues](https://github.com/FredHutch/batch-dashboard/issues/new)
 you discover with this console.
 
@@ -49,7 +53,7 @@ use AWS Batch. You can get the credentials
 Initially, these credentials only allow you
 to access your PI's S3 bucket. To use the
 credentials with AWS Batch, you must request
-access to batch.
+access to Batch.
 
 Request access by emailing **scicomp@fredhutch.org** with the subject
 line **Request Access to AWS Batch**.
@@ -133,7 +137,8 @@ and develop your image on your own machine until it's ready to be deployed.
 * What (if any) environment variables should be passed to the container when it starts †
 * Any data volumes that should be used with the container (the compute
   environments provided by SciComp include 1TB of scratch space available
-  at `/scratch`).
+  at `/scratch`). (**Note**: the process of providing scratch space
+  is going to change soon, check back for updated information).
 * What (if any) IAM role your job should use for AWS permissions. This
   is important if your job requires permission to access your PI's
   [S3](https://aws.amazon.com/s3/) bucket.
@@ -198,6 +203,9 @@ all jobs on the container must share the 1TB of scratch space. You must also tak
 job could be overwritten by files from other jobs running on the same
 instance.
 
+**Note**: The method of providing scratch space is going to change.
+Check back for updated information.
+
 # Using S3 in jobs
 
 The Center's policies require that all of our `S3` buckets be encrypted.
@@ -243,7 +251,8 @@ Now edit `job.json`, being sure to fill in the following fields:
    [`aws batch describe-job-definitions`](https://docs.aws.amazon.com/cli/latest/reference/batch/describe-job-definitions.html),
   optionally passing a `--job-definitions` parameter with the name
   of one (or more) job definitions. This will show you each version
-  of the specified definition(s).
+  of the specified definition(s). You can also view job
+  definitions in the [console](https://batch-dashboard.fhcrc.org).
 * If you are using [fetch-and-run](#using-fetch-and-run), do NOT edit
   the `command` field. If you are not using `fetch-and-run` you may
   want to edit this field to override the default command.
@@ -483,6 +492,7 @@ def testfunc(obj, job_num):
     # that includes the job iteration number.
 
     # Let's print out the input object we receive, just to see what it looks like:
+    print("Welcome to iteration number {}.".format(job_num))
     print("Before:")
     print(obj)
     print()
@@ -522,6 +532,15 @@ you discover with the `run_batch_jobs` script.
 Once your job has been submitted and you have a job ID, you can use it to
 retrieve the job status.
 
+## In the web console
+
+Go to the [jobs table](https://batch-dashboard.fhcrc.org/#jobs_header) in
+the console. Paste your job ID or job name into the **Search** box.
+This will show the current status of your job. Click the job ID
+to see more details.
+
+## From the command line
+
 The following command will give comprehensive information about your job,
 given a job ID:
 
@@ -543,8 +562,18 @@ This will give you the status (one of `SUBMITTED, PENDING, RUNNABLE,
 
 # View Job Logs
 
+Note that you can only view job logs once a job has reached the `RUNNING`
+state, or has completed (with the `SUCCEEDED` or `FAILED` state).
 
-### On Rhino or Gizmo
+### In the web console
+
+Go to the [job table](https://batch-dashboard.fhcrc.org/#jobs_header) in the
+web console. Paste your job's ID into the **Search** box. Click on
+the job ID. Under **Attempts**, click on the **View logs** link.
+
+### On the command line
+
+#### On Rhino or Gizmo
 
 On the `rhino` machines or the `gizmo` cluster, there's a quick command
 to get the job output. Be sure and use your actual job ID instead of
@@ -557,7 +586,7 @@ get_batch_job_log 2c0c87f2-ee7e-4845-9fcb-d747d5559370
 You can also pass a log stream ID (see below) instead of a job ID.
 
 
-## On other systems
+#### On other systems
 
 If you are on another system without the `get_batch_job_log` script
 (such as your laptop), you can still monitor job logs, but you need to
