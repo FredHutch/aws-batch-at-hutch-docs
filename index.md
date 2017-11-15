@@ -36,10 +36,10 @@ SciComp provides access to AWS Batch in two ways:
 
 Access to the AWS Management Console (the web/GUI interface), is not available
 to end users at the Center. However, there is a customized, read-only
-[console](https://batch-dashboard.fhcrc.org/) available which displays information
+[dashboard](https://batch-dashboard.fhcrc.org/) available which displays information
 about compute environments, queues, job definitions, and jobs.
 Please report any [issues](https://github.com/FredHutch/batch-dashboard/issues/new)
-you discover with this console.
+you discover with this dashboard.
 
 
 # Request access
@@ -252,7 +252,7 @@ Now edit `job.json`, being sure to fill in the following fields:
   optionally passing a `--job-definitions` parameter with the name
   of one (or more) job definitions. This will show you each version
   of the specified definition(s). You can also view job
-  definitions in the [console](https://batch-dashboard.fhcrc.org).
+  definitions in the [dashboard](https://batch-dashboard.fhcrc.org).
 * If you are using [fetch-and-run](#using-fetch-and-run), do NOT edit
   the `command` field. If you are not using `fetch-and-run` you may
   want to edit this field to override the default command.
@@ -532,10 +532,10 @@ you discover with the `run_batch_jobs` script.
 Once your job has been submitted and you have a job ID, you can use it to
 retrieve the job status.
 
-## In the web console
+## In the web dashboard
 
 Go to the [jobs table](https://batch-dashboard.fhcrc.org/#jobs_header) in
-the console. Paste your job ID or job name into the **Search** box.
+the dashboard. Paste your job ID or job name into the **Search** box.
 This will show the current status of your job. Click the job ID
 to see more details.
 
@@ -565,10 +565,10 @@ This will give you the status (one of `SUBMITTED, PENDING, RUNNABLE,
 Note that you can only view job logs once a job has reached the `RUNNING`
 state, or has completed (with the `SUCCEEDED` or `FAILED` state).
 
-### In the web console
+### In the web dashboard
 
 Go to the [job table](https://batch-dashboard.fhcrc.org/#jobs_header) in the
-web console. Paste your job's ID into the **Search** box. Click on
+web dashboard. Paste your job's ID into the **Search** box. Click on
 the job ID. Under **Attempts**, click on the **View logs** link.
 
 ### On the command line
