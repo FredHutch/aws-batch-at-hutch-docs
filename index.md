@@ -267,7 +267,7 @@ Now edit `job.json`, being sure to fill in the following fields:
   your HutchNet ID. . The first character must be alphanumeric, and up to 128 letters (uppercase and lowercase), numbers, hyphens, and underscores are allowed.
 * `jobQueue` - the name of the job queue to submit to (which
    has the same name as the compute environment that will be used).
-   In most cases, you can use the `medium` queue.
+   In most cases, you can use the `mixed` queue.
 * `jobDefinition` The name and version of the job definition to use.
    This will be a string followed by a colon and version number, for
    example: `myJobDef:7`. You can see all job definitions with
@@ -313,7 +313,7 @@ like this:
 ```json
 {
     "jobName": "jdoe-test-job",
-    "jobQueue": "medium",
+    "jobQueue": "mixed",
     "jobDefinition": "myJobDef:7",
     "containerOverrides": {
         "command": [
@@ -379,7 +379,7 @@ import boto3
 batch = boto3.client('batch')
 
 response = batch.submit_job(jobName='jdoe-test-job', # use your HutchNet ID instead of 'jdoe'
-                            jobQueue='medium', # sufficient for most jobs
+                            jobQueue='mixed', # sufficient for most jobs
                             jobDefinition='myJobDef:7', # use a real job definition
                             containerOverrides={
                                 "command": ['echo', 'hello', 'world'], # optionally override command
