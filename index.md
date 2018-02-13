@@ -182,12 +182,14 @@ upon its standard input.
 
 By using streams in this way, we don't require any extra disk
 space. Not all commands can work with streaming, specifically
-those which:
+those which open files in random-access mode, allowing seeking
+to random parts of the file.
 
-* take more than one input file or produce more than one
-  output file (though this may change in the future).
-* open files in random-access mode, allowing seeking to
-  random parts of the file.
+If a program does not open files in random-access mode, but
+does not explicitly accept input from `STDIN`, or writes more
+than one output file, it can still work with streaming
+input/output via the use of
+[named pipes](https://github.com/FredHutch/s3uploader).
 
 More and more bioinformatics programs can read and write
 directly from/to S3 buckets, so this should reduce the need
@@ -400,7 +402,8 @@ python3 submit_job.py
 ```
 
 If you had dozens of jobs to submit, you could do it with a `for`
-loop in python (or see the next section).
+loop in python (but consider using
+[array jobs](https://docs.aws.amazon.com/batch/latest/userguide/array_jobs.html)).
 
 
 # Monitor job progress
