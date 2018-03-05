@@ -17,7 +17,7 @@ This documentation is still being written. Many sections are empty.
 {:toc}
 
 
-# What is AWS Batch?
+# What is AWS Batch??
 
 From the [website](https://aws.amazon.com/batch/):
 
