@@ -66,25 +66,8 @@ Note that you will not be able to create
 compute environments or job queues. If you need a custom compute environment, please contact SciComp.
 
 
-
-
-
-<div style="display: none;">
-scicomp people:
-
-The way to onboard a new user is to do the following:
-
-```
-. /app/local/aws-batch-wrapper/env/bin/activate # start virtual env
-/app/local/aws-batch-wrapper/onboarding.py # show help message
-# For a user with HutchNet ID jblow and PI name peters-u, run:
-/app/local/aws-batch-wrapper/onboarding.py jblow peters-u
-```
-
-This requires some special permissions, you probably need to
-authenticate your command-line session with MFA.
-
-</div>
+*SciComp staff*: See the [onboarding page](onboarding.html) for
+details on how to onboard new Batch users.
 
 
 # Create a Docker image
