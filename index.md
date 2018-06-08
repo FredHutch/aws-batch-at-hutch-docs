@@ -507,6 +507,15 @@ in `boto3`.
 
 ## Using fetch-and-run
 
+[Fetch & Run](https://aws.amazon.com/blogs/compute/creating-a-simple-fetch-and-run-aws-batch-job/) is a tool
+supplied by AWS which allows you to store scripts in S3 and have your Batch jobs retrive and run them.
+This could simplify your workflow, resulting in fewer builds of your Docker container.
+
+Note that there is also a [version of Fetch & Run](https://github.com/FredHutch/url-fetch-and-run) which can fetch scripts from any publicly
+accessible URL, saving you the step of copying them to S3.
+
+
+
 ## Using a script baked-in to a Docker image
 
 # References
