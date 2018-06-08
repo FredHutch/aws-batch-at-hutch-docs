@@ -82,7 +82,7 @@ if there's already a Docker image available.
 
 The SciComp group is also developing Docker images that contain much
 of the software you are used to finding in `/app` on the `rhino`
-machines and `gizmo`/`beagle` clusters.
+machines and `gizmo`/`beagle` clusters (here's the [R image](https://hub.docker.com/r/fredhutch/ls2_r/)).
 
 If you've found an existing Docker image that meets your needs, you don't
 need to read the rest of this section.
@@ -180,15 +180,6 @@ for scratch space.
 
 
 
-# Using S3 in jobs
-
-The Center's policies require that all of our `S3` buckets be encrypted.
-When copying files to or from `S3`, be sure to use the
-`--sse AES256` flag in the AWS CLI, or pass the parameter
-`ServerSideEncryption='AES256'` if using `boto3`.
-
-If you don't set this flag, you will get cryptic, counterintuitive
-error messages (such as `Access Denied`).
 
 # Submit your job
 
@@ -338,18 +329,25 @@ that as you will need it to track the progress of your job.
   version of the language since 2008. Python 2 will eventually no longer
   be supported.
 * We recommend using [Virtual Environments](http://docs.python-guide.org/en/latest/dev/virtualenvs/),
-  particularly [virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/),
+  particularly [pipenv](https://docs.pipenv.org/),
   to keep the dependencies of your various projects isolated from each
   other.
 
-Assuming `virtualenvwrapper`  and `python3` are installed, create a virtual environment as follows:
+Assuming `pipenv`  and `python3` are installed, create a virtual environment as follows:
 
 ```
-mkvirtualenv --python $(which python3) boto-env
-pip install boto3 # installs into the virtual environment
+pipenv --python $(which python3) install boto3 
 ```
 
+Activate the virtual environment with this command:
 
+```
+pipenv shell
+```
+
+You can now install more Python packages using `pipenv install`.
+See the [pipenv documentation](https://docs.pipenv.org/) for more
+information.
 
 ### Submitting your job
 
